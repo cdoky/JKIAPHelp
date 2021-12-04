@@ -135,21 +135,20 @@ static  JKIAPManager *manager = nil;
         return;
     }
     
-    
     SKPaymentQueue *defaultQueue = [SKPaymentQueue defaultQueue];
   
     BOOL processExistingTransactions = false;
-       if (defaultQueue != nil && defaultQueue.transactions != nil)
-       {
-           if ([[defaultQueue transactions] count] > 0) {
-               processExistingTransactions = true;
-           }
+    if (defaultQueue != nil && defaultQueue.transactions != nil)
+    {
+       if ([[defaultQueue transactions] count] > 0) {
+           processExistingTransactions = true;
        }
+    }
 
-       [defaultQueue addTransactionObserver:self];
-       if (processExistingTransactions) {
-           [self paymentQueue:defaultQueue updatedTransactions:defaultQueue.transactions];
-       }
+    [defaultQueue addTransactionObserver:self];
+    if (processExistingTransactions) {
+       [self paymentQueue:defaultQueue updatedTransactions:defaultQueue.transactions];
+    }
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
           [self checkUnfinishedTransaction:NO];
