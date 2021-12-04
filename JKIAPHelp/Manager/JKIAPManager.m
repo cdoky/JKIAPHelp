@@ -125,10 +125,8 @@ static  JKIAPManager *manager = nil;
     if (![self judgeJailbrokenCanPay]) {
         return ;
     }
-    if (!self.verifyManager) {
-        self.verifyManager = [[JKIAPVerifyManager alloc] initWithKeychainService:keychainService keychainAccount:keychainAccount];
-        self.verifyManager.delegate = self;
-    }
+    self.verifyManager = [[JKIAPVerifyManager alloc] initWithKeychainService:keychainService keychainAccount:keychainAccount];
+    self.verifyManager.delegate = self;
  
     if (!_reachability) {
         _reachability = [JKReachability reachabilityForInternetConnection];
