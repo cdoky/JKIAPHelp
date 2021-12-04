@@ -341,13 +341,12 @@ static  JKIAPManager *manager = nil;
     for (JKIAPTransactionModel *model in keychainSet) {
         if (model.transactionStatus == TransactionStatusSeriverSucc) {
             if (self.delegate &&[self.delegate respondsToSelector:@selector(onRedistributeGoodsFinish:)]) {
-                    [self.delegate onRedistributeGoodsFinish:model];
-                 [self finishTransationWithModel:model];
+                [self.delegate onRedistributeGoodsFinish:model];
             }
+            [self finishTransationWithModel:model];
         }else if (model.transactionStatus == TransactionStatusSeriverError || model.transactionStatus == TransactionStatusAppleSucc){
             //验证订单
-                self.currentStatus = JKIAPLoadingStatus_Verifying;
-            
+            self.currentStatus = JKIAPLoadingStatus_Verifying;
             if (!model.appStoreReceipt) {
                 __weak  __typeof(self)  weakSelf = self;
                 [self fetchTransactionReceiptData:^(NSString *receipt) {
@@ -355,33 +354,28 @@ static  JKIAPManager *manager = nil;
                     [weakSelf.verifyManager startPaymentTransactionVerifingModel:model];
                 }];
             }else{
-                    [self.verifyManager startPaymentTransactionVerifingModel :model];
+                [self.verifyManager startPaymentTransactionVerifingModel :model];
             }
-            
         }else if (model.transactionStatus == TransactionStatusSeriverFailed){
             if (self.delegate &&[self.delegate respondsToSelector:@selector(onRedistributeGoodsFailue:withError:)]) {
                 [self.delegate onRedistributeGoodsFailue:model withError:model.error];
-                [self.verifyManager deletePaymentTransactionModel:model];
             }
+            [self.verifyManager deletePaymentTransactionModel:model];
         }else if (model.transactionStatus == TransactionStatusAppleFailed){
-          
-                if (self.delegate &&[self.delegate respondsToSelector:@selector(onIAPPayFailue:withError:)]) {
-                             [self.delegate onIAPPayFailue:model withError:model.error];
-                             [self.verifyManager deletePaymentTransactionModel:model];
-                         }
+            if (self.delegate &&[self.delegate respondsToSelector:@selector(onIAPPayFailue:withError:)]) {
+                [self.delegate onIAPPayFailue:model withError:model.error];
+            }
+            [self.verifyManager deletePaymentTransactionModel:model];
         }else if (model.transactionStatus == TransactionStatusAppleCancel){
             
             if (model.cancelStatusCheckCount == 3) {
-                  [self.verifyManager deletePaymentTransactionModel:model];
+                [self.verifyManager deletePaymentTransactionModel:model];
             }else{
-                  model.cancelStatusCheckCount += 1;
+                model.cancelStatusCheckCount += 1;
                 [self.verifyManager updatePaymentTransactionCheckCount:model];
             }
-          
         }
     }
-    
-   
 }
 
 #pragma mark - SKProductsRequestDelegate
