@@ -17,7 +17,7 @@ static BOOL _enableLoading = YES;
 @implementation JKIAPConfig
 
 +(void)sendLog:(NSString *)format, ... {
-
+    
     if (_sendLog) {
         va_list paramList;
         va_start(paramList,format);

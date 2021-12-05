@@ -40,9 +40,6 @@ typedef void(^ReceiptBlock)(NSString *receipt);
  */
 @property(nonatomic, weak) SKProductsRequest *currentProductRequest;
 
-
-
-
 /* 验证管理 */
 @property (nonatomic,strong)JKIAPVerifyManager *verifyManager;
 @end
@@ -54,17 +51,13 @@ static  JKIAPManager *manager = nil;
  * 单例方法.
  */
 + (instancetype)sharedManager{
-
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         manager = [JKIAPManager new];
         [manager addNotificationObserver];
     });
-    
     return manager;
 }
-
-
 
 - (BOOL)currentDeviceIsJailbroken{
     return  [JKJailbreakDetectTool detectCurrentDeviceIsJailbroken];
@@ -82,10 +75,9 @@ static  JKIAPManager *manager = nil;
     return NO;
 }
 
-
 /**
  检测是否可以进行支付
-
+ 
  @return 不允许越狱机器购买时 返回NO
  */
 - (BOOL)judgeJailbrokenCanPay{
@@ -99,14 +91,13 @@ static  JKIAPManager *manager = nil;
 /// 将本地模型转换成JKIAPTransactionModel
 /// @param model JKIAPTransactionModel
 - (void)resetKeychainService:( NSString * _Nullable )keychainService
-             keychainAccount:( NSString * _Nullable )keychainAccount JKIAPTransactionModels:(NSArray<JKIAPTransactionModel *>*)models{
+             keychainAccount:( NSString * _Nullable )keychainAccount
+      JKIAPTransactionModels:(NSArray<JKIAPTransactionModel *>*)models{
     if (!self.verifyManager) {
-           self.verifyManager = [[JKIAPVerifyManager alloc] initWithKeychainService:keychainService keychainAccount:keychainAccount];
-           self.verifyManager.delegate = self;
-       }
+        self.verifyManager = [[JKIAPVerifyManager alloc] initWithKeychainService:keychainService keychainAccount:keychainAccount];
+        self.verifyManager.delegate = self;
+    }
     [self.verifyManager savePaymentTransactionModels:models];
- 
-    
 }
 
 /**
@@ -121,13 +112,16 @@ static  JKIAPManager *manager = nil;
 #pragma clang diagnostic pop
 }
 - (void)registerPayWithKeychainService:(NSString *)keychainService
-              keychainAccount:(NSString *)keychainAccount{
+                       keychainAccount:(NSString *)keychainAccount{
     if (![self judgeJailbrokenCanPay]) {
-        return ;
+        return;
     }
-    self.verifyManager = [[JKIAPVerifyManager alloc] initWithKeychainService:keychainService keychainAccount:keychainAccount];
-    self.verifyManager.delegate = self;
- 
+    if (!self.verifyManager) {
+        self.verifyManager = [[JKIAPVerifyManager alloc] initWithKeychainService:keychainService
+                                                                 keychainAccount:keychainAccount];
+        self.verifyManager.delegate = self;
+    }
+    
     if (!_reachability) {
         _reachability = [JKReachability reachabilityForInternetConnection];
         [_reachability startNotifier];
@@ -136,30 +130,24 @@ static  JKIAPManager *manager = nil;
     }
     
     SKPaymentQueue *defaultQueue = [SKPaymentQueue defaultQueue];
-  
+    
     BOOL processExistingTransactions = false;
     if (defaultQueue != nil && defaultQueue.transactions != nil)
     {
-       if ([[defaultQueue transactions] count] > 0) {
-           processExistingTransactions = true;
-       }
+        if ([[defaultQueue transactions] count] > 0) {
+            processExistingTransactions = true;
+        }
     }
-
+    
     [defaultQueue addTransactionObserver:self];
     if (processExistingTransactions) {
-       [self paymentQueue:defaultQueue updatedTransactions:defaultQueue.transactions];
+        [self paymentQueue:defaultQueue updatedTransactions:defaultQueue.transactions];
     }
-
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-          [self checkUnfinishedTransaction:NO];
-    });
-      
     
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [self checkUnfinishedTransaction:NO];
+    });
 }
-
-
-
-
 
 #pragma mark - IAP
 
@@ -172,29 +160,24 @@ static  JKIAPManager *manager = nil;
     NSError *error = nil;
     if (!_verifyManager) {
         error = [NSError errorWithJKIAPCode:JKIAPError_NotRegistered];
-    
     }else if ([self hasUnfinishedTransaction]) {
         error = [NSError errorWithJKIAPCode:JKIAPError_HasUnfinishedTransaction];
-        
     }else if (self.currentStatus != JKIAPLoadingStatus_None) {
         error = [NSError errorWithJKIAPCode:JKIAPError_Paying];
-  
     }else if (![self judgeJailbrokenCanPay]) {
         error = [NSError errorWithJKIAPCode:JKIAPError_Jailbroken];
-       
     }else if (!productIdentifier) {
         error = [NSError errorWithJKIAPCode:JKIAPError_ProductId];
     }
     
-   
     if (error) {
-       if (_isBuyProdutTofetchList) {
-           [self sendDelegateErrorMethod:@selector(onIAPPayFailue:withError:) error:error];
+        if (_isBuyProdutTofetchList) {
+            [self sendDelegateErrorMethod:@selector(onIAPPayFailue:withError:) error:error];
         }else{
-           [self sendDelegateErrorMethod:@selector(onLaunProductListFinish:withError:) error:error];
-            }
+            [self sendDelegateErrorMethod:@selector(onLaunProductListFinish:withError:) error:error];
+        }
         return;
-       }
+    }
     
     if (self.currentProductRequest) {
         [self.currentProductRequest cancel];
@@ -203,14 +186,12 @@ static  JKIAPManager *manager = nil;
     
     _productIdentifier = productIdentifier;
     _isUserAction = YES;
-        self.currentStatus = JKIAPLoadingStatus_CheckingProduct;
-        
-        SKProductsRequest *request = [[SKProductsRequest alloc] initWithProductIdentifiers:[NSSet setWithObject:productIdentifier]];
-        self.currentProductRequest = request;
-        request.delegate = self;
-        [request start];
+    self.currentStatus = JKIAPLoadingStatus_CheckingProduct;
     
-  
+    SKProductsRequest *request = [[SKProductsRequest alloc] initWithProductIdentifiers:[NSSet setWithObject:productIdentifier]];
+    self.currentProductRequest = request;
+    request.delegate = self;
+    [request start];
 }
 
 
@@ -218,51 +199,40 @@ static  JKIAPManager *manager = nil;
  恢复购买
  */
 - (void)restoreProducts{
-
     NSError *error = nil;
     if (!_verifyManager) {
-     error = [NSError errorWithJKIAPCode:JKIAPError_NotRegistered];
+        error = [NSError errorWithJKIAPCode:JKIAPError_NotRegistered];
     }else  if ([self hasUnfinishedTransaction]) {
-              error = [NSError errorWithJKIAPCode:JKIAPError_HasUnfinishedTransaction];
+        error = [NSError errorWithJKIAPCode:JKIAPError_HasUnfinishedTransaction];
     }else if (self.currentStatus != JKIAPLoadingStatus_None) {
-         error = [NSError errorWithJKIAPCode:JKIAPError_Paying];
+        error = [NSError errorWithJKIAPCode:JKIAPError_Paying];
     }
-    
     if (error) {
         [self sendDelegateErrorMethod:@selector(onIAPRestoreResult:withError:) error:error];
         return;
     }
     _isUserAction = YES;
-        self.currentStatus = JKIAPLoadingStatus_Restoring;
-         [[SKPaymentQueue defaultQueue] restoreCompletedTransactions];
-    
+    self.currentStatus = JKIAPLoadingStatus_Restoring;
+    [[SKPaymentQueue defaultQueue] restoreCompletedTransactions];
 }
-
-
-
 
 - (void)buyProductWithUserID:(NSString *)userid
            productIdentifier:(NSString *)productIdentifier
                      orderId:(NSString *)orderId{
+    NSError *error = nil;
     
-      NSError *error = nil;
-   
-    
-      if (!_verifyManager) {
-       error = [NSError errorWithJKIAPCode:JKIAPError_NotRegistered];
-         
-      }else  if ([self hasUnfinishedTransaction]) {
-              error = [NSError errorWithJKIAPCode:JKIAPError_HasUnfinishedTransaction];
-              
-          }else  if (self.currentStatus != JKIAPLoadingStatus_None) {
-           error = [NSError errorWithJKIAPCode:JKIAPError_Paying];
-          }else if (!productIdentifier || ! orderId) {
+    if (!_verifyManager) {
+        error = [NSError errorWithJKIAPCode:JKIAPError_NotRegistered];
+    }else  if ([self hasUnfinishedTransaction]) {
+        error = [NSError errorWithJKIAPCode:JKIAPError_HasUnfinishedTransaction];
+    }else  if (self.currentStatus != JKIAPLoadingStatus_None) {
+        error = [NSError errorWithJKIAPCode:JKIAPError_Paying];
+    }else if (!productIdentifier || ! orderId) {
         error = [NSError errorWithJKIAPCode:JKIAPError_Parameter];
-       
     }else  if (![_reachability currentReachable]) {
-         error = [NSError errorWithJKIAPCode:JKIAPError_Net];
+        error = [NSError errorWithJKIAPCode:JKIAPError_Net];
     }
-
+    
     if (error) {
         [self sendDelegateErrorMethod:@selector(onIAPPayFailue:withError:) error:error];
         return;
@@ -273,71 +243,67 @@ static  JKIAPManager *manager = nil;
     _isBuyProdutTofetchList = YES;
     _isUserAction = YES;
     [self fetchProductInfoWithProductIdentifier:productIdentifier];
-    
-   
 }
 
 /**
  购买物品
-@param payment SKPayment
+ @param payment SKPayment
  */
 - (void)buyProductWithSKPayment:(SKPayment  *)payment{
     NSError *error = nil;
-      if (!_verifyManager) {
-       error = [NSError errorWithJKIAPCode:JKIAPError_NotRegistered];
-          
-      }else if ([self hasUnfinishedTransaction]) {
-              error = [NSError errorWithJKIAPCode:JKIAPError_HasUnfinishedTransaction];
-            
+    if (!_verifyManager) {
+        error = [NSError errorWithJKIAPCode:JKIAPError_NotRegistered];
+    }else if ([self hasUnfinishedTransaction]) {
+        error = [NSError errorWithJKIAPCode:JKIAPError_HasUnfinishedTransaction];
     }else if (self.currentStatus != JKIAPLoadingStatus_None) {
-           error = [NSError errorWithJKIAPCode:JKIAPError_Paying];
-        
-     }else if (![_reachability currentReachable]) {
-         error = [NSError errorWithJKIAPCode:JKIAPError_Net];
+        error = [NSError errorWithJKIAPCode:JKIAPError_Paying];
+    }else if (![_reachability currentReachable]) {
+        error = [NSError errorWithJKIAPCode:JKIAPError_Net];
     }
-
+    
     if (error) {
         [self sendDelegateErrorMethod:@selector(onIAPPayFailue:withError:) error:error];
         return;
     }
-     _isUserAction = YES;
+    _isUserAction = YES;
     self.currentStatus = JKIAPLoadingStatus_Paying;
-        [[SKPaymentQueue defaultQueue] addPayment:payment];
+    [[SKPaymentQueue defaultQueue] addPayment:payment];
 }
 
 - (BOOL)hasUnfinishedTransaction{
-      NSArray *keychainSet =[self.verifyManager fetchAllPaymentTransactionModel];
+    NSArray *keychainSet =[self.verifyManager fetchAllPaymentTransactionModel];
     
-    if (keychainSet.count > 0) {
-        BOOL hasUnfinished = NO;
-        for (JKIAPTransactionModel *model in keychainSet) {
-            if (model.transactionStatus != TransactionStatusAppleCancel && model.transactionStatus != TransactionStatusWaitApple) {
-                hasUnfinished = YES;
-                break;
-            }
-        }
-        return hasUnfinished;
-    }else{
+    if (keychainSet.count == 0) {
         return NO;
     }
-    
+    BOOL hasUnfinished = NO;
+    for (JKIAPTransactionModel *model in keychainSet) {
+        if (model.transactionStatus != TransactionStatusAppleCancel
+            && model.transactionStatus != TransactionStatusWaitApple) {
+            hasUnfinished = YES;
+            break;
+        }
+    }
+    return hasUnfinished;
 }
+
 - (NSArray *)getUnfinishTransactions{
-      NSArray *keychainSet =[self.verifyManager fetchAllPaymentTransactionModel];
+    NSArray *keychainSet =[self.verifyManager fetchAllPaymentTransactionModel];
     return keychainSet;
 }
+
 -(void)checkUnfinishTransaction{
     [self checkUnfinishedTransaction:YES];
 }
+
 -(void)checkUnfinishedTransaction:(BOOL)userAction{
-   
     if (self.verifyManager.isVerifing) {
         self.currentStatus = JKIAPLoadingStatus_Verifying;
         return ;
     }
-     _isUserAction = userAction;
+    _isUserAction = userAction;
     NSMutableArray *keychainSet =[self.verifyManager fetchAllPaymentTransactionModel];
-  
+    
     for (JKIAPTransactionModel *model in keychainSet) {
         if (model.transactionStatus == TransactionStatusSeriverSucc) {
             if (self.delegate &&[self.delegate respondsToSelector:@selector(onRedistributeGoodsFinish:)]) {
@@ -367,7 +333,6 @@ static  JKIAPManager *manager = nil;
             }
             [self.verifyManager deletePaymentTransactionModel:model];
         }else if (model.transactionStatus == TransactionStatusAppleCancel){
-            
             if (model.cancelStatusCheckCount == 3) {
                 [self.verifyManager deletePaymentTransactionModel:model];
             }else{
@@ -382,7 +347,7 @@ static  JKIAPManager *manager = nil;
 -(void)productsRequest:(SKProductsRequest *)request didReceiveResponse:(SKProductsResponse *)response{
     JKIAPLog(@"-----------收到产品反馈信息--------------");
     NSArray *products =response.products;
-   
+    
     JKIAPLog(@"产品付费数量: %d", (int)[products count]);
     
     SKMutablePayment *payment = nil;
@@ -405,75 +370,50 @@ static  JKIAPManager *manager = nil;
         NSError *error = nil;
         self.currentStatus = JKIAPLoadingStatus_None;
         if (self.delegate && [self.delegate respondsToSelector:@selector(onLaunProductListFinish:withError:)]) {
-               if (!product) {
-                     error = [NSError errorWithJKIAPCode:JKIAPError_ProductId];
-                     
-                      }
+            if (!product) {
+                error = [NSError errorWithJKIAPCode:JKIAPError_ProductId];
+            }
             dispatch_async(dispatch_get_main_queue(), ^{
-                 [self.delegate onLaunProductListFinish:product withError:error];
+                [self.delegate onLaunProductListFinish:product withError:error];
             });
-             
         }
-
         return;
     }
-
     
     if (payment) {
-       
         NSDictionary *JKIAPInfo = @{@"JKIAP_OrderID":_appOrderID,
                                     @"JKIAP_Price":price,
-                                    @"JKIAP_UserId":_userId
+                                    @"JKIAP_UserId":_userId,
         };
         payment.applicationUsername = [[NSString alloc] initWithData:[NSJSONSerialization dataWithJSONObject:JKIAPInfo options:NSJSONWritingPrettyPrinted error:nil] encoding:NSUTF8StringEncoding];
-          JKIAPLog(@"开始进行购买: %@,%@" , payment.productIdentifier,payment.applicationUsername);
-       
+        JKIAPLog(@"开始进行购买: %@,%@" , payment.productIdentifier,payment.applicationUsername);
         self.currentStatus = JKIAPLoadingStatus_Paying;
-       [[SKPaymentQueue defaultQueue] addPayment:payment];
-        
+        [[SKPaymentQueue defaultQueue] addPayment:payment];
     }else{
-       NSError *error = [NSError errorWithJKIAPCode:JKIAPError_ProductId];
+        NSError *error = [NSError errorWithJKIAPCode:JKIAPError_ProductId];
         [self sendDelegateErrorMethod:@selector(onIAPPayFailue:withError:) error:error];
         self.currentStatus = JKIAPLoadingStatus_None;
     }
-    
- 
 }
 #pragma mark - SKPaymentTransactionObserver
-
-
-
 //监听购买结果
 - (void)paymentQueue:(SKPaymentQueue *)queue updatedTransactions:(NSArray *)transaction{
     for(SKPaymentTransaction *tran in transaction){
         switch (tran.transactionState) {
-            case SKPaymentTransactionStatePurchased:{
-                
+            case SKPaymentTransactionStatePurchased:
                 [self verifyTransaction:tran];
-             
-            }
                 break;
-            case SKPaymentTransactionStatePurchasing:{
-              
-                   [self saveTransaction:tran];
-            }
+            case SKPaymentTransactionStatePurchasing:
+                [self saveTransaction:tran];
                 break;
-            case SKPaymentTransactionStateRestored:{
+            case SKPaymentTransactionStateRestored:
                 [[SKPaymentQueue defaultQueue] finishTransaction:tran];
-            }
                 break;
-            case SKPaymentTransactionStateFailed:{
-            
-                    [self endFailedTransaction:tran];
-                
-            }
+            case SKPaymentTransactionStateFailed:
+                [self endFailedTransaction:tran];
                 break;
-
             case SKPaymentTransactionStateDeferred:
-            {
                 JKIAPLog(@"IAP_SKPaymentTransactionStateDeferred");
-            }
-
                 break;
             default:
                 break;
@@ -483,64 +423,56 @@ static  JKIAPManager *manager = nil;
 
 
 - (void)verifyTransaction:(SKPaymentTransaction *)tran{
-    
     NSString *order = tran.payment.applicationUsername;
-    
-    
     NSString *transactionIdentifier = tran.transactionIdentifier;
+    
     if (!transactionIdentifier) {
         JKIAPLog(@"IAP_Lost transactionIdentifier!!!");
         transactionIdentifier = [NSUUID UUID].UUIDString;
     }
+    
     JKIAPLog(@"IAP_购买完成,向自己的服务器验证 ---- %@,%@,paying:%d",tran.payment.productIdentifier, order,self.currentStatus);
-  __weak  __typeof(self)  weakSelf = self;
-       if (_currentModel ) {
-           [self fetchTransactionReceiptData:^(NSString *receipt) {
-               __strong  __typeof(self)  strongSelf = weakSelf;
-               if (receipt == nil) {
-                   strongSelf.currentStatus = JKIAPLoadingStatus_None;
-                   [strongSelf.verifyManager finishPaymentTransactionVerifingModel:_currentModel];
-                   if (strongSelf.delegate && [strongSelf.delegate respondsToSelector:@selector(onIAPPayFailue:withError:)]) {
-                                        [strongSelf.delegate onIAPPayFailue:strongSelf->_currentModel withError:tran.error];
-                                 }
-                   return ;
-               }
-
-               strongSelf->_currentModel.appStoreReceipt = receipt;
-               strongSelf->_currentModel.transactionIdentifier =transactionIdentifier;
-               
-               if (strongSelf.delegate && [strongSelf.delegate respondsToSelector:@selector(onIAPPaymentSucess:)]) {
-                                                                        [strongSelf.delegate onIAPPaymentSucess:strongSelf->_currentModel];
-                                                                 }
-               [strongSelf.verifyManager startPaymentTransactionVerifingModel:strongSelf->_currentModel];
-           }];
-           
-        }else{
-            ///以前未结束订单苹果返回处理
-            JKIAPTransactionModel *model = [JKIAPTransactionModel modelWithProductIdentifier:tran.payment.productIdentifier applicationUsername:order];
-            [self fetchTransactionReceiptData:^(NSString *receipt) {
-                    __strong  __typeof(self)  strongSelf = weakSelf;
-               
-                                                                  
-                model.appStoreReceipt = receipt;
-                model.transactionIdentifier = transactionIdentifier;
-             if (strongSelf.delegate && [strongSelf.delegate respondsToSelector:@selector(onIAPPaymentSucess:)]) {
-                                                                                     [strongSelf.delegate onIAPPaymentSucess:model];
+    
+    __weak  __typeof(self)  weakSelf = self;
+    if (_currentModel ) {
+        [self fetchTransactionReceiptData:^(NSString *receipt) {
+            __strong  __typeof(self)  strongSelf = weakSelf;
+            if (receipt == nil) {
+                strongSelf.currentStatus = JKIAPLoadingStatus_None;
+                [strongSelf.verifyManager finishPaymentTransactionVerifingModel:_currentModel];
+                if (strongSelf.delegate && [strongSelf.delegate respondsToSelector:@selector(onIAPPayFailue:withError:)]) {
+                    [strongSelf.delegate onIAPPayFailue:strongSelf->_currentModel withError:tran.error];
+                }
+                return ;
             }
-                [strongSelf.verifyManager startPaymentTransactionVerifingModel:model];
-            }];
-        
+            strongSelf->_currentModel.appStoreReceipt = receipt;
+            strongSelf->_currentModel.transactionIdentifier =transactionIdentifier;
+            
+            if (strongSelf.delegate && [strongSelf.delegate respondsToSelector:@selector(onIAPPaymentSucess:)]) {
+                [strongSelf.delegate onIAPPaymentSucess:strongSelf->_currentModel];
+            }
+            [strongSelf.verifyManager startPaymentTransactionVerifingModel:strongSelf->_currentModel];
+        }];
+    }else{
+        ///以前未结束订单苹果返回处理
+        JKIAPTransactionModel *model = [JKIAPTransactionModel modelWithProductIdentifier:tran.payment.productIdentifier applicationUsername:order];
+        [self fetchTransactionReceiptData:^(NSString *receipt) {
+            __strong  __typeof(self)  strongSelf = weakSelf;
+            
+            model.appStoreReceipt = receipt;
+            model.transactionIdentifier = transactionIdentifier;
+            if (strongSelf.delegate && [strongSelf.delegate respondsToSelector:@selector(onIAPPaymentSucess:)]) {
+                [strongSelf.delegate onIAPPaymentSucess:model];
+            }
+            [strongSelf.verifyManager startPaymentTransactionVerifingModel:model];
+        }];
     }
 }
 
-
-
 - (void)saveTransaction:(SKPaymentTransaction *)tran{
-    
-    
     NSString *order = tran.payment.applicationUsername;
     JKIAPLog(@"IAP_Add Products list,%@,username:%@",tran.payment.productIdentifier,order);
- 
+    
     if (!order) {
         JKIAPLog(@"The order is miss!?");
         return;
@@ -560,67 +492,57 @@ static  JKIAPManager *manager = nil;
     if (!_currentModel) {
         currentModel = [JKIAPTransactionModel modelWithProductIdentifier:tran.payment.productIdentifier applicationUsername:order];
     }
-      currentModel.error = tran.error;
+    currentModel.error = tran.error;
     //内购巨坑(如果用户是支付宝并且有验证码时,苹果会先取消订单然后再完成订单)
     if (tran.error.code == SKErrorPaymentCancelled) {
         currentModel.transactionStatus = TransactionStatusAppleCancel;
-         [self.verifyManager updatePaymentTransactionModelStatus:currentModel];
+        [self.verifyManager updatePaymentTransactionModelStatus:currentModel];
     }else{
         currentModel.transactionStatus = TransactionStatusAppleFailed;
-          [self.verifyManager deletePaymentTransactionModel:currentModel];
+        [self.verifyManager deletePaymentTransactionModel:currentModel];
     }
-  
     
     if (self.delegate && [self.delegate respondsToSelector:@selector(onIAPPayFailue:withError:)]) {
         [self.delegate onIAPPayFailue:currentModel withError:tran.error];
     }
-       [[SKPaymentQueue defaultQueue] finishTransaction:tran];
+    [[SKPaymentQueue defaultQueue] finishTransaction:tran];
     
     if (self.currentStatus != JKIAPLoadingStatus_None && _currentModel) {
-       
         self.currentStatus = JKIAPLoadingStatus_None;
         _currentModel = nil;
     }
-   
 }
 #pragma mark - IAPRestore
 
 - (void)paymentQueueRestoreCompletedTransactionsFinished:(SKPaymentQueue *)queue
 {
+    JKIAPLog(@"IAP_received restored transactions: %lu", (unsigned long)queue.transactions.count);
+    NSMutableArray *storeResult= [NSMutableArray new];
     
-        JKIAPLog(@"IAP_received restored transactions: %lu", (unsigned long)queue.transactions.count);
-    
-        NSMutableArray *storeResult= [NSMutableArray new];
-    
-    
-        [queue.transactions enumerateObjectsUsingBlock:^(SKPaymentTransaction * _Nonnull transaction, NSUInteger idx, BOOL * _Nonnull stop) {
-            NSString *productID = transaction.payment.productIdentifier;
-            [storeResult addObject:productID];
-            JKIAPLog(@"RestoreProductID %@",productID);
-        }];
+    [queue.transactions enumerateObjectsUsingBlock:^(SKPaymentTransaction * _Nonnull transaction, NSUInteger idx, BOOL * _Nonnull stop) {
+        NSString *productID = transaction.payment.productIdentifier;
+        [storeResult addObject:productID];
+        JKIAPLog(@"RestoreProductID %@",productID);
+    }];
     self.currentStatus = JKIAPLoadingStatus_None;
     if (self.delegate && [self.delegate respondsToSelector:@selector(onIAPRestoreResult:withError:)]) {
         [self.delegate onIAPRestoreResult:storeResult withError:nil];
     }
-    
 }
 - (void)paymentQueue:(SKPaymentQueue *)queue restoreCompletedTransactionsFailedWithError:(NSError *)error{
-     JKIAPLog(@"RestoreError%@",error);
+    JKIAPLog(@"RestoreError%@",error);
     self.currentStatus = JKIAPLoadingStatus_None;
     if (self.delegate && [self.delegate respondsToSelector:@selector(onIAPRestoreResult:withError:)]) {
-       [ self.delegate onIAPRestoreResult:nil withError:error];
+        [ self.delegate onIAPRestoreResult:nil withError:error];
     }
 }
-
-
 
 #pragma mark - Transation related
 
 - (void)finishTransationWithModel:(JKIAPTransactionModel *)model {
-    
     NSString *transactionIdentifier = model.transactionIdentifier;
     if (!transactionIdentifier) {
-           [self.verifyManager deletePaymentTransactionModel:model];
+        [self.verifyManager deletePaymentTransactionModel:model];
         return;
     }
     // 未完成的列表.
@@ -632,7 +554,6 @@ static  JKIAPManager *manager = nil;
             break;
         }
     }
-    
     ///如果没有找到对应的单据,并且只有一个未完成物品的productIdentifier与之匹配就能肯定是这个订单.
     if (transactionsWaitingForVerifing.count == 1) {
         SKPaymentTransaction *firstTransaction = transactionsWaitingForVerifing.firstObject;
@@ -640,125 +561,105 @@ static  JKIAPManager *manager = nil;
             targetTransaction = firstTransaction;
         }
     }
+//    else if (transactionsWaitingForVerifing.count == 0 && model.transactionStatus == TransactionStatusSeriverSucc) {
+//        [self.verifyManager deletePaymentTransactionModel:model];
+//    }
     
     // 可能会出现明明有未成功的交易, 但是 transactionsWaitingForVerifing 就是没有值.
     // 此时应该将这笔已经完成的订单状态存起来, 等待之后苹果返回这笔订单的时候在进行处理.
     if (!targetTransaction) {
-
         NSString *errorString = [NSString stringWithFormat:@"订单在后台验证成功, 但是从 IAP 的未完成订单里取不到这比交易的错误 transactionIdentifier: %@", transactionIdentifier];
         JKIAPLog(errorString);
         [self.verifyManager updatePaymentTransactionModelStatus:model];
     }else {
         JKIAPLog(@"准备删除储存订单:%@",model);
         [[SKPaymentQueue defaultQueue] finishTransaction:targetTransaction];
-         [self.verifyManager deletePaymentTransactionModel:model];
-        
+        [self.verifyManager deletePaymentTransactionModel:model];
     }
 }
 
 #pragma mark - JKIAPVerifyManagerDelegate
 
 - (void)startPaymentTransactionVerifingModel:(JKIAPTransactionModel *)transactionModel{
-    
-      self.currentStatus = JKIAPLoadingStatus_Verifying;
+    self.currentStatus = JKIAPLoadingStatus_Verifying;
     // 发送到苹果服务器验证凭证
     __weak typeof(self) weakSelf = self;
     if (self.delegate && [self.delegate respondsToSelector:@selector(verifyWithModel:resultAction:)]) {
         [self.delegate verifyWithModel:transactionModel resultAction:^(JKIAPVerifyResult result) {
             __strong  __typeof(self)  strongSelf = weakSelf;
             dispatch_async(dispatch_get_main_queue(), ^{
-            
-            JKIAPLog(@"验证回调:product:%@",transactionModel);
-             
-            switch (result) {
-                case JKIAPVerifyValid:
-                {
-                    transactionModel.transactionStatus = TransactionStatusSeriverSucc;
-                    [strongSelf finishTransationWithModel:transactionModel];
-                    strongSelf.currentStatus = JKIAPLoadingStatus_None;
-                    
-                    if (strongSelf->_currentModel && [strongSelf.delegate respondsToSelector:@selector(onDistributeGoodsFinish:)]) {
-                 
-                            
-                            strongSelf->_currentModel = nil;
-                        
-                        [strongSelf.delegate onDistributeGoodsFinish:transactionModel];
-                         
-                    }else if ([strongSelf.delegate respondsToSelector:@selector(onRedistributeGoodsFinish:)]) {
-                        
-                              [strongSelf.delegate onRedistributeGoodsFinish:transactionModel];
-                        
+                JKIAPLog(@"验证回调:product:%@",transactionModel);
+                switch (result) {
+                    case JKIAPVerifyValid:
+                    {
+                        transactionModel.transactionStatus = TransactionStatusSeriverSucc;
+                        [strongSelf finishTransationWithModel:transactionModel];
+                        if (strongSelf->_currentModel && [strongSelf.delegate respondsToSelector:@selector(onDistributeGoodsFinish:)]) {
+                            [strongSelf.delegate onDistributeGoodsFinish:transactionModel];
+                        }else if ([strongSelf.delegate respondsToSelector:@selector(onRedistributeGoodsFinish:)]) {
+                            [strongSelf.delegate onRedistributeGoodsFinish:transactionModel];
+                        }
+                        strongSelf.currentStatus = JKIAPLoadingStatus_None;
+                        strongSelf->_currentModel = nil;
                     }
-                    
-                   
-                }
-                    break;
-                case JKIAPVerifyInvalid:
-                {
-                    transactionModel.transactionStatus = TransactionStatusSeriverFailed;
-                     [strongSelf finishTransationWithModel:transactionModel];
-                    NSError *error = [NSError errorWithJKIAPCode:JKIAPError_VerifyInvalid];
-                    
-                    if (strongSelf->_currentModel && [strongSelf.delegate respondsToSelector:@selector(onDistributeGoodsFailue:withError:)]) {
-                      
-                            strongSelf.currentStatus = JKIAPLoadingStatus_None;
-                            strongSelf->_currentModel = nil;
+                        break;
+                    case JKIAPVerifyInvalid:
+                    {
+                        transactionModel.transactionStatus = TransactionStatusSeriverFailed;
+                        [strongSelf finishTransationWithModel:transactionModel];
+                        NSError *error = [NSError errorWithJKIAPCode:JKIAPError_VerifyInvalid];
+                        
+                        if (strongSelf->_currentModel && [strongSelf.delegate respondsToSelector:@selector(onDistributeGoodsFailue:withError:)]) {
                             [strongSelf.delegate onDistributeGoodsFailue:transactionModel withError:error];
-                    }else  if ([strongSelf.delegate respondsToSelector:@selector(onRedistributeGoodsFailue:withError:)]) {
-                        
-                                [strongSelf.delegate onRedistributeGoodsFailue:transactionModel withError:error];
+                        }else  if ([strongSelf.delegate respondsToSelector:@selector(onRedistributeGoodsFailue:withError:)]) {
+                            [strongSelf.delegate onRedistributeGoodsFailue:transactionModel withError:error];
+                        }
+                        strongSelf.currentStatus = JKIAPLoadingStatus_None;
+                        strongSelf->_currentModel = nil;
                     }
-                }
-                    break;
+                        break;
                     case JKIAPVerifyNeedRefreshReceipt:
                     {
                         transactionModel.transactionStatus = TransactionStatusSeriverError;
                         NSError *error = [NSError errorWithJKIAPCode:JKIAPError_VerifyInvalid];
                         transactionModel.appStoreReceipt = nil;
                         [self.verifyManager updatePaymentTransactionModelStatus:transactionModel];
+                        
                         if (strongSelf->_currentModel && [strongSelf.delegate respondsToSelector:@selector(onDistributeGoodsFailue:withError:)]) {
-                          
-                                strongSelf.currentStatus = JKIAPLoadingStatus_None;
-                                strongSelf->_currentModel = nil;
-                                [strongSelf.delegate onDistributeGoodsFailue:transactionModel withError:error];
+                            [strongSelf.delegate onDistributeGoodsFailue:transactionModel withError:error];
                         }else  if ([strongSelf.delegate respondsToSelector:@selector(onRedistributeGoodsFailue:withError:)]) {
-                            
-                                    [strongSelf.delegate onRedistributeGoodsFailue:transactionModel withError:error];
+                            [strongSelf.delegate onRedistributeGoodsFailue:transactionModel withError:error];
                         }
+                        strongSelf.currentStatus = JKIAPLoadingStatus_None;
+                        strongSelf->_currentModel = nil;
                     }
                         break;
-        
-                default:
-                {
-                    transactionModel.transactionStatus = TransactionStatusSeriverError;
-                    NSError *error = [NSError errorWithJKIAPCode:JKIAPError_VerifyInvalid];
-                    if (strongSelf->_currentModel  && [strongSelf.delegate respondsToSelector:@selector(onDistributeGoodsFailue:withError:)]) {
-                            strongSelf->_currentModel = nil;
-                              [strongSelf.delegate onDistributeGoodsFailue:transactionModel withError:error];
-
-                    }else  if ( [strongSelf.delegate respondsToSelector:@selector(onRedistributeGoodsFailue:withError:)]) {
-                                [strongSelf.delegate onRedistributeGoodsFailue:transactionModel withError:error];
+                    default:
+                    {
+                        transactionModel.transactionStatus = TransactionStatusSeriverError;
+                        NSError *error = [NSError errorWithJKIAPCode:JKIAPError_VerifyInvalid];
+                        if (strongSelf->_currentModel  && [strongSelf.delegate respondsToSelector:@selector(onDistributeGoodsFailue:withError:)]) {
+                            [strongSelf.delegate onDistributeGoodsFailue:transactionModel withError:error];
+                        }else  if ( [strongSelf.delegate respondsToSelector:@selector(onRedistributeGoodsFailue:withError:)]) {
+                            [strongSelf.delegate onRedistributeGoodsFailue:transactionModel withError:error];
+                        }
+                        strongSelf->_currentModel = nil;
                     }
                 }
-            }
                 [self.verifyManager finishPaymentTransactionVerifingModel:transactionModel];
-             
-                   self.currentStatus = JKIAPLoadingStatus_None;
+                
+                self.currentStatus = JKIAPLoadingStatus_None;
                 self->_isUserAction = NO;
             });
         }];
     }
 }
-
-
 #pragma mark -  FetchTransactionReceipt
 
 /**
  获取当前票据
- 
  */
 - (void)fetchTransactionReceiptData:(ReceiptBlock)result{
-    
     NSURL *appStoreReceiptURL = [[NSBundle mainBundle] appStoreReceiptURL];
     NSData *receiptData = [NSData dataWithContentsOfURL:appStoreReceiptURL];
     NSString *receiptString=[receiptData base64EncodedStringWithOptions:NSDataBase64EncodingEndLineWithLineFeed];
@@ -773,28 +674,21 @@ static  JKIAPManager *manager = nil;
             _receiptBlock = nil;
         }
     }
-    
-    
 }
-
 
 #pragma mark -  SKRequestDelegate
 - (void)requestDidFinish:(SKRequest *)request {
-    
-        if ([request isKindOfClass:[SKReceiptRefreshRequest class]]) {
-            JKIAPLog(@"IAP_SKReceiptRefreshRequest_Success");
-            if (_receiptBlock) {
-                [self fetchTransactionReceiptData:_receiptBlock];
-            }
+    if ([request isKindOfClass:[SKReceiptRefreshRequest class]]) {
+        JKIAPLog(@"IAP_SKReceiptRefreshRequest_Success");
+        if (_receiptBlock) {
+            [self fetchTransactionReceiptData:_receiptBlock];
         }
-  
-    
+    }
 }
+
 - (void)request:(SKRequest *)request didFailWithError:(NSError *)error{
     if ([request isKindOfClass:[SKReceiptRefreshRequest class]]) {
         JKIAPLog(@"IAP_SKReceiptRefreshRequest_Error:%@",error.localizedDescription);
-        
-       
         if (_receiptBlock) {
             if (_currentModel && error.code == 16) {
                 _receiptBlock(nil);
@@ -802,60 +696,50 @@ static  JKIAPManager *manager = nil;
             }else{
                 [self fetchTransactionReceiptData:_receiptBlock];
             }
-            
         }
     }else if ([request isKindOfClass:[SKProductsRequest class]]){
         NSError *errorr = [NSError errorWithJKIAPCode:JKIAPError_Net];
-               [self sendDelegateErrorMethod:@selector(onIAPPayFailue:withError:) error:errorr];
-               self.currentStatus = JKIAPLoadingStatus_None;
+        [self sendDelegateErrorMethod:@selector(onIAPPayFailue:withError:) error:errorr];
+        self.currentStatus = JKIAPLoadingStatus_None;
     }
 }
 
 #pragma mark - privateMethods
 
-
 - (void)sendDelegateErrorMethod:(SEL)sel error:(NSError *)error{
     if (self.delegate && [self.delegate respondsToSelector:sel]) {
-           [self.delegate performSelector:sel withObject:nil withObject:error];
+        [self.delegate performSelector:sel withObject:nil withObject:error];
     }
- 
 }
-
 
 - (void)changLoadingStatus:(JKIAPLoadingStatus)status{
     if (JKIAPConfig.enableLoading && _isUserAction) {
-          NSString *msg = nil;
-             switch (status) {
-                 case JKIAPLoadingStatus_CheckingProduct:
-                     msg = @"查询商品中....";
-                     break;
-                     case JKIAPLoadingStatus_Paying:
-                      msg = @"正在购买中....";
-                     break;
-                     case JKIAPLoadingStatus_Restoring:
-                      msg = @"恢复购买中....";
-                     break;
-                     case JKIAPLoadingStatus_Verifying:
-                      msg = @"验证订单中....";
-                     break;
-                 default:
-                     break;
-             }
+        NSString *msg = nil;
+        switch (status) {
+            case JKIAPLoadingStatus_CheckingProduct:
+                msg = @"查询商品中....";
+                break;
+            case JKIAPLoadingStatus_Paying:
+                msg = @"正在购买中....";
+                break;
+            case JKIAPLoadingStatus_Restoring:
+                msg = @"恢复购买中....";
+                break;
+            case JKIAPLoadingStatus_Verifying:
+                msg = @"验证订单中....";
+                break;
+            default:
+                break;
+        }
         dispatch_async(dispatch_get_main_queue(), ^{
             if (msg) {
-                        [self.activityIndicatorController showActivityWithMessage:msg];
-                   }else{
-                       [self.activityIndicatorController stop];
-                   }
+                [self.activityIndicatorController showActivityWithMessage:msg];
+            }else{
+                [self.activityIndicatorController stop];
+            }
         });
-       
-               
-      }
+    }
 }
-
-
-
-
 
 #pragma mark - Notification
 
@@ -867,16 +751,12 @@ static  JKIAPManager *manager = nil;
 
 - (void)applicationWillEnterForegroundNotification:(NSNotification *)note {
     // 检查沙盒中没有持久化的交易.
-    
-      [self checkUnfinishedTransaction:NO];
+    [self checkUnfinishedTransaction:NO];
 }
 
 - (void)didReceiveApplicationWillTerminateNotification {
-
     [[SKPaymentQueue defaultQueue] removeTransactionObserver:self];
-  
 }
-
 
 #pragma mark -  Getter && Setter
 
@@ -890,7 +770,6 @@ static  JKIAPManager *manager = nil;
     }
     return nil;
 }
-
 
 - (void)setCurrentStatus:(JKIAPLoadingStatus)currentStatus{
     _currentStatus = currentStatus;

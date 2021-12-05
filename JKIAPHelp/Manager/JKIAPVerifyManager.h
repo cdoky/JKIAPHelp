@@ -27,13 +27,13 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  初始化方法,指定钥匙串存储参数.
-
+ 
  @param keychainService 钥匙串Service
  @param keychainAccount 钥匙串Account
  @return JKIAPVerifyManager
  */
 - (instancetype)initWithKeychainService:(NSString *)keychainService
-               keychainAccount:(NSString *)keychainAccount;
+                        keychainAccount:(NSString *)keychainAccount;
 /**
  获取所有交易模型
  
@@ -46,23 +46,19 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)appendPaymentTransactionModel:(JKIAPTransactionModel *)transactionModel;
 
-
 /**
  开始支付凭证验证队列
-
+ 
  @param transactionModel 验证的model
  */
 - (void)startPaymentTransactionVerifingModel:(JKIAPTransactionModel *)transactionModel;
 
-
-
 /**
  更新model状态
-
+ 
  @param transactionModel model
  */
 - (void)updatePaymentTransactionModelStatus:(JKIAPTransactionModel *)transactionModel;
-
 
 /// 更新model检测次数
 /// @param transactionModel model
@@ -72,16 +68,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param transactionModel model
 - (void)finishPaymentTransactionVerifingModel:(JKIAPTransactionModel *)transactionModel;
 
-
 /**
  * 删除失败 model.
  */
 - (void)deletePaymentTransactionModel:(JKIAPTransactionModel *)transactionModel;
 
 
-
 /**
-⚠️ 删除所有已储存订单
+ ⚠️ 删除所有已储存订单
  */
 - (void)cleanAllModels;
 

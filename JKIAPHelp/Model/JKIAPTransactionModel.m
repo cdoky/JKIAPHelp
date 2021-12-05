@@ -33,7 +33,7 @@
         _transactionDate = [aDecoder decodeObjectForKey:@"transactionDate"];
         _seriverOrder = [aDecoder decodeObjectForKey:@"seriverOrder"];
         _priceString = [aDecoder decodeObjectForKey:@"priceString"];
-     _applicationUsername = [aDecoder decodeObjectForKey:@"applicationUsername"];
+        _applicationUsername = [aDecoder decodeObjectForKey:@"applicationUsername"];
         _userId =[aDecoder decodeObjectForKey:@"userId"];
         _transactionStatus = [aDecoder decodeIntegerForKey:@"transactionStatus"];
         _appStoreReceipt = [aDecoder decodeObjectForKey:@"appStoreReceipt"];
@@ -49,48 +49,48 @@
     [aCoder encodeObject:self.transactionDate forKey:@"transactionDate"];
     [aCoder encodeObject:self.seriverOrder forKey:@"seriverOrder"];
     [aCoder encodeObject:self.priceString forKey:@"priceString"];
-
+    
     [aCoder encodeObject:self.applicationUsername forKey:@"applicationUsername"];
     [aCoder encodeObject:self.userId forKey:@"userId"];
     [aCoder encodeObject:self.appStoreReceipt forKey:@"appStoreReceipt"];
     
     [aCoder encodeInteger:self.transactionStatus forKey:@"transactionStatus"];
-     [aCoder encodeObject:self.error forKey:@"error"];
-      [aCoder encodeObject:@(self.cancelStatusCheckCount) forKey:@"cancelStatusCheckCount"];
+    [aCoder encodeObject:self.error forKey:@"error"];
+    [aCoder encodeObject:@(self.cancelStatusCheckCount) forKey:@"cancelStatusCheckCount"];
 }
 
 
 
 + (instancetype)modelWithProductIdentifier:(NSString *)productIdentifier
-  applicationUsername:(NSString *)applicationUsername{
+                       applicationUsername:(NSString *)applicationUsername{
     NSParameterAssert(productIdentifier);
-       //NSParameterAssert(orderId);
+    //NSParameterAssert(orderId);
     
     JKIAPTransactionModel*model = [JKIAPTransactionModel new];
-          model.productIdentifier = productIdentifier;
-          
-          model.applicationUsername = applicationUsername;
-         
-          model.transactionStatus = 0;
-          model.transactionDate = [NSDate date];
-
+    model.productIdentifier = productIdentifier;
+    
+    model.applicationUsername = applicationUsername;
+    
+    model.transactionStatus = 0;
+    model.transactionDate = [NSDate date];
+    
     
     if (applicationUsername) {
-         NSError *error = nil;
+        NSError *error = nil;
         
-           NSData *data = [applicationUsername dataUsingEncoding:NSUTF8StringEncoding];
+        NSData *data = [applicationUsername dataUsingEncoding:NSUTF8StringEncoding];
         if (data) {
             NSDictionary *JKIAPInfo = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableLeaves error:&error];
-                     
-                     if (!error && [JKIAPInfo isKindOfClass:[NSDictionary class]]) {
-                         model.priceString = [JKIAPInfo objectForKey:@"JKIAP_Price"];
-                         model.seriverOrder =  [JKIAPInfo objectForKey:@"JKIAP_OrderID"];
-                         model.userId =  [JKIAPInfo objectForKey:@"JKIAP_UserId"];
-                     }
+            
+            if (!error && [JKIAPInfo isKindOfClass:[NSDictionary class]]) {
+                model.priceString = [JKIAPInfo objectForKey:@"JKIAP_Price"];
+                model.seriverOrder =  [JKIAPInfo objectForKey:@"JKIAP_OrderID"];
+                model.userId =  [JKIAPInfo objectForKey:@"JKIAP_UserId"];
+            }
         }
-         
+        
     }
-       return model;
+    return model;
 }
 
 #pragma mark - Private
@@ -117,11 +117,11 @@
     
     BOOL isTransactionIdentifierMatch= YES;
     if (self.transactionIdentifier) {
-         isTransactionIdentifierMatch =[self.transactionIdentifier isEqualToString:object.transactionIdentifier];
+        isTransactionIdentifierMatch =[self.transactionIdentifier isEqualToString:object.transactionIdentifier];
     }
     BOOL isSeriverOrderMatch = YES;
     if (object.applicationUsername) {
-       isSeriverOrderMatch=  [self.applicationUsername  isEqualToString:object.applicationUsername];
+        isSeriverOrderMatch=  [self.applicationUsername  isEqualToString:object.applicationUsername];
     }
     return isTransactionIdentifierMatch && isProductIdentifierMatch&&isSeriverOrderMatch ;
 }
@@ -130,13 +130,13 @@
 #pragma mark -  Setter
 - (void)setUserId:(NSString *)userId{
     if (userId) {
-            _userId = userId;
+        _userId = userId;
     }
-
+    
 }
 - (void)setProductIdentifier:(NSString *)productIdentifier{
     if (productIdentifier) {
-            _productIdentifier = productIdentifier;
+        _productIdentifier = productIdentifier;
     }
 }
 - (void)setTransactionDate:(NSDate *)transactionDate{
@@ -151,21 +151,20 @@
 }
 
 - (void)setApplicationUsername:(NSString *)applicationUsername{
-   
     _applicationUsername = applicationUsername;
     if (applicationUsername !=nil) {
-           NSError *error = nil;
-                 NSData *data = [applicationUsername dataUsingEncoding:NSUTF8StringEncoding];
+        NSError *error = nil;
+        NSData *data = [applicationUsername dataUsingEncoding:NSUTF8StringEncoding];
         if (data) {
             NSDictionary *JKIAPInfo = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableLeaves error:&error];
-                            if (!error && [JKIAPInfo isKindOfClass:[NSDictionary class]]) {
-                                _priceString = [JKIAPInfo objectForKey:@"JKIAP_Price"];
-                                _seriverOrder =  [JKIAPInfo objectForKey:@"JKIAP_OrderID"];
-                                _userId =  [JKIAPInfo objectForKey:@"JKIAP_UserId"];
-                            }
+            if (!error && [JKIAPInfo isKindOfClass:[NSDictionary class]]) {
+                _priceString = [JKIAPInfo objectForKey:@"JKIAP_Price"];
+                _seriverOrder =  [JKIAPInfo objectForKey:@"JKIAP_OrderID"];
+                _userId =  [JKIAPInfo objectForKey:@"JKIAP_UserId"];
+            }
         }
-                
-       }
+        
+    }
 }
 
 

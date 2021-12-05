@@ -36,7 +36,7 @@ typedef void(^VerifyRsultBlock)(JKIAPVerifyResult result);
 
 /**
  票据验证方法
-
+ 
  @param model 交易模型
  @param resultAction ⚠️需要执行的block(将从自己服务器验证的结果传入执行)
  */
@@ -50,7 +50,7 @@ typedef void(^VerifyRsultBlock)(JKIAPVerifyResult result);
 
 /**
  获取苹果商店信息
-
+ 
  @param products 商店物品
  @param error 错误信息
  */
@@ -59,7 +59,7 @@ typedef void(^VerifyRsultBlock)(JKIAPVerifyResult result);
 
 /**
  苹果支付成功回调
-
+ 
  @param model 交易模型
  */
 -(void)onIAPPaymentSucess:(JKIAPTransactionModel*)model;
@@ -67,7 +67,7 @@ typedef void(^VerifyRsultBlock)(JKIAPVerifyResult result);
 
 /**
  苹果支付失败回调
-
+ 
  @param model 交易模型
  @param error 错误信息
  (如果是JKIAPError_HasUnfinishedTransaction,需要调用
@@ -88,7 +88,7 @@ typedef void(^VerifyRsultBlock)(JKIAPVerifyResult result);
 
 /**
  发货成功回调
-
+ 
  @param model 交易模型
  */
 -(void)onDistributeGoodsFinish:(JKIAPTransactionModel*)model;
@@ -111,7 +111,7 @@ typedef void(^VerifyRsultBlock)(JKIAPVerifyResult result);
 
 /**
  输出日志
-
+ 
  @param log 日志信息
  */
 - (void)JKIAPLog:(NSString *)log;

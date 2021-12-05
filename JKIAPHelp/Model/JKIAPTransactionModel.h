@@ -8,7 +8,6 @@
 
 #import <Foundation/Foundation.h>
 
-
 typedef NS_ENUM(NSUInteger, TransactionStatus) {
     TransactionStatusWaitApple,
     TransactionStatusAppleCancel,
@@ -19,11 +18,9 @@ typedef NS_ENUM(NSUInteger, TransactionStatus) {
     TransactionStatusSeriverSucc,
 };
 
-
 @interface JKIAPTransactionModel : NSObject<NSCoding>
 
 #pragma mark - Properties
-
 
 /**
  * 事务 id.
@@ -40,29 +37,21 @@ typedef NS_ENUM(NSUInteger, TransactionStatus) {
  */
 @property(nonatomic, copy, readonly) NSString *productIdentifier;
 
-
-
-
 /// 请求里的applicationUsername
 @property (nonatomic, copy) NSString *applicationUsername;
-
 
 /**
  订单状态
  */
 @property(nonatomic, assign) TransactionStatus transactionStatus;
 
-
-
 /* 票据 */
 @property (nonatomic,copy)NSString * appStoreReceipt;
-
 
 /**
  错误信息
  */
 @property (nonatomic, strong) NSError *error;
-
 
 /// 检测次数,如果在
 @property (nonatomic, assign) NSInteger cancelStatusCheckCount;
@@ -70,7 +59,7 @@ typedef NS_ENUM(NSUInteger, TransactionStatus) {
 /* 以下属性,只有使用订单号参数购买方式:
  - (void)buyProductWithUserID:(NSString *)userid
  productIdentifier:(NSString *)productIdentifier
-                      orderId:(NSString *)orderId; 才有值 */
+ orderId:(NSString *)orderId; 才有值 */
 
 /**
  * 用户 id.
@@ -100,6 +89,5 @@ typedef NS_ENUM(NSUInteger, TransactionStatus) {
  */
 + (instancetype)modelWithProductIdentifier:(NSString *)productIdentifier
                        applicationUsername:(NSString *)applicationUsername;
-
 
 @end
